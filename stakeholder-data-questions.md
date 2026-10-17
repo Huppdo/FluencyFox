@@ -12,3 +12,8 @@ A few numbers in `tandem_data.xlsx` don't line up, and they decide how big the c
 5. **Ticket growth.** Sync tickets rose from 140 to 520 a month. How much of that rise comes from user growth or more people using offline mode? Did ticket categories or tagging change in July?
 6. **Root cause.** Has Engineering confirmed that conflict handling causes the sync problems? Could the July offline-mode release be part of it?
 7. **Last month's churn.** The 4.4% is one month of data. Did anything else happen that month, such as a price change, a competitor launch, or a batch of renewals?
+
+## Third round
+
+8. **Mobile signups.** Only 18% to 22% of mobile signups become active users in their first week, compared with 44% on web. Are many mobile signups people who were invited to an existing team, rather than people starting a new team? Invited people may never create 3 tasks, so they would pull the mobile rate down.
+9. **Invited teammates.** Does the signup count include people who joined through an invite? If so, the same people appear in both the signup numbers and the invite numbers.

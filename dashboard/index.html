@@ -1,0 +1,480 @@
+<style>
+.td{display:flex;flex-direction:column;gap:var(--cds-gap-xl);font-family:var(--font-anthropic-sans);font-variant-numeric:tabular-nums;max-width:90rem;margin-inline:auto}
+.td h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0;text-wrap:balance}
+.td h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.td h3{font-size:var(--cds-font-size-body);font-weight:var(--cds-font-weight-medium);margin:0}
+.td-take{margin:var(--cds-gap-xs) 0 0;color:var(--color-fg-muted);max-width:70ch;line-height:1.5}
+.td .td-take b,.td .td-check b{font-weight:600;color:var(--color-fg)}
+.td-sec{display:flex;flex-direction:column;gap:var(--cds-gap-md)}
+.td-sec>p{margin:0;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.td-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:var(--cds-gap-md)}
+.td-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:var(--cds-gap-md)}
+.td-card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);display:flex;flex-direction:column;gap:var(--cds-gap-sm);min-width:0}
+.td-wide{grid-column:1/-1}
+.td-note{margin:0;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);line-height:1.45}
+.td-kpi-label{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.td .td-kpi-val{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);line-height:1.1;min-height:1.1em}
+.td-kpi-sub{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.td-bad{color:var(--color-bad)}
+.td-chart{position:relative;min-height:6rem}
+.td-bars{display:flex;flex-direction:column;gap:var(--cds-gap-sm)}
+.td-bar-row{display:flex;flex-direction:column;gap:4px;cursor:default}
+.td-bar-top{display:flex;justify-content:space-between;gap:var(--cds-gap-sm);font-size:var(--cds-font-size-caption)}
+.td-bar-label{color:var(--color-fg-muted);min-width:0}
+.td-bar-val{color:var(--color-fg);white-space:nowrap}
+.td-bar-track{position:relative;height:14px;border-radius:7px;background:var(--cds-chart-grid)}
+.td-bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px;min-width:3px}
+.td-bar-back{background:var(--cds-chart-muted)}
+.td-bar-row:hover .td-bar-fill:not(.td-bar-back){filter:brightness(1.1)}
+.td-tip{position:absolute;pointer-events:none;z-index:2;background:var(--cds-surface-popover);border:1px solid var(--cds-border);border-radius:var(--cds-radius);box-shadow:var(--cds-shadow-popover);padding:var(--cds-pad-xs) var(--cds-pad-sm);font-size:var(--cds-font-size-caption);max-width:16rem;display:none}
+.td-tip.on{display:block}
+.td-tip div:first-child{color:var(--cds-text-secondary)}
+.td-strip{position:relative;display:flex;height:40px;border-radius:6px;overflow:visible;margin-top:22px}
+.td-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:var(--cds-font-size-caption);color:var(--color-bg);font-weight:600;border-right:2px solid var(--color-panel);min-width:0;overflow:hidden}
+.td-seg:first-child{border-radius:6px 0 0 6px}.td-seg:last-child{border-radius:0 6px 6px 0;border-right:0}
+.td-cap{position:absolute;top:-22px;bottom:-6px;border-left:2px dashed var(--cds-chart-reference)}
+.td-cap span{position:absolute;top:0;left:6px;white-space:nowrap;font-size:var(--cds-font-size-caption);color:var(--color-fg)}
+.td-cap.td-cap-r span{left:auto;right:6px}
+.td-tablebox{overflow-x:auto}
+.td table{border-collapse:collapse;width:100%;font-size:var(--cds-font-size-caption)}
+.td th{text-align:left;font-weight:var(--cds-font-weight-medium);color:var(--color-fg-muted);padding:6px 8px;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.td td{padding:8px;border-bottom:1px solid var(--color-border-line);vertical-align:top}
+.td th.n,.td td.n{text-align:right}
+.td tr.td-total td{font-weight:600}
+.td-check{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:var(--cds-gap-sm);line-height:1.5;max-width:80ch}
+.td-fail{display:flex;align-items:center;justify-content:center;gap:6px;min-height:inherit;height:100%;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.td-fail i{width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)}
+.td [data-dash-source-state=empty]{color:transparent}
+.td [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
+</style>
+
+<div class="td">
+  <header>
+    <h1 id="top">Tandem planning data</h1>
+    <p class="td-take">Engineering asks add up to <b data-fill="int" data-source="capacity" data-field="asked" data-row="0">—</b> engineer-weeks against <b data-fill="int" data-source="capacity" data-field="capacity" data-row="0">—</b> of capacity. Sync problems are the top cancellation reason at <b data-fill="pct0" data-source="exit_survey" data-field="share" data-where="reason=Sync problems / lost changes">—</b>, and monthly paid churn has climbed to <b data-fill="pct1" data-source="churn_support" data-field="value" data-where="measure=Monthly paid churn last month">—</b>.</p>
+  </header>
+
+  <section class="td-kpis" id="headline">
+    <div class="td-card">
+      <span class="td-kpi-label">ARR</span>
+      <span class="td-kpi-val" data-fill="usdc" data-source="context" data-field="value" data-where="measure=ARR (USD)">—</span>
+      <span class="td-kpi-sub"><span data-fill="int" data-source="context" data-field="value" data-where="measure=Paying teams">—</span> paying teams</span>
+    </div>
+    <div class="td-card">
+      <span class="td-kpi-label">Monthly paid churn, last month</span>
+      <span class="td-kpi-val" data-fill="pct1" data-source="churn_support" data-field="value" data-where="measure=Monthly paid churn last month">—</span>
+      <span class="td-kpi-sub"><span class="td-bad" data-fill="pts" data-source="kpis" data-field="churn_change_pts" data-row="0">—</span> since Q1</span>
+    </div>
+    <div class="td-card">
+      <span class="td-kpi-label">ARR lost per month (est.)</span>
+      <span class="td-kpi-val" data-fill="usdc" data-source="kpis" data-field="arr_lost_per_month" data-row="0">—</span>
+      <span class="td-kpi-sub">≈<span data-fill="int0" data-source="kpis" data-field="teams_lost_per_month" data-row="0">—</span> teams × <span data-fill="usd" data-source="kpis" data-field="arr_per_team" data-row="0">—</span> avg per team</span>
+    </div>
+    <div class="td-card">
+      <span class="td-kpi-label">Sync tickets per month</span>
+      <span class="td-kpi-val" data-fill="int" data-source="churn_support" data-field="value" data-where="measure=Sync tickets per month now">—</span>
+      <span class="td-kpi-sub"><span class="td-bad" data-fill="x" data-source="kpis" data-field="sync_ticket_multiple" data-row="0">—</span> pre-July level</span>
+    </div>
+    <div class="td-card">
+      <span class="td-kpi-label">Signup to paid, last 90 days</span>
+      <span class="td-kpi-val" data-fill="pct1" data-source="funnel_rates" data-field="signup_to_paid" data-where="platform=Total">—</span>
+      <span class="td-kpi-sub"><span data-fill="int" data-source="funnel_rates" data-field="paid" data-where="platform=Total">—</span> of <span data-fill="int" data-source="funnel_rates" data-field="signups" data-where="platform=Total">—</span> signups</span>
+    </div>
+    <div class="td-card">
+      <span class="td-kpi-label">Eng asks vs capacity</span>
+      <span class="td-kpi-val"><span data-fill="int" data-source="capacity" data-field="asked" data-row="0">—</span> / <span data-fill="int" data-source="capacity" data-field="capacity" data-row="0">—</span></span>
+      <span class="td-kpi-sub"><span class="td-bad" data-fill="x" data-source="capacity" data-field="ratio" data-row="0">—</span> oversubscribed, in engineer-weeks</span>
+    </div>
+  </section>
+
+  <section class="td-sec" id="churn">
+    <h2>Churn and support</h2>
+    <div class="td-grid">
+      <div class="td-card">
+        <h3 id="churn-trend">Monthly paid churn</h3>
+        <p class="td-note">Share of paying teams cancelling per month.</p>
+        <div class="td-chart dash-skeleton" id="c-churn" data-source="churn_support"></div>
+      </div>
+      <div class="td-card">
+        <h3 id="sync-tickets">Sync tickets per month</h3>
+        <p class="td-note">Before offline mode launched in July vs now. Sync is <span data-fill="pct0" data-source="churn_support" data-field="value" data-where="measure=Sync share of all tickets now">—</span> of all tickets today.</p>
+        <div class="td-chart dash-skeleton" id="c-sync" data-source="churn_support"></div>
+      </div>
+      <div class="td-card">
+        <h3 id="exit-survey">Main reason for cancelling</h3>
+        <p class="td-note">Exit survey, <span data-fill="int" data-source="churn_support" data-field="value" data-where="measure=Exit survey responses (last 3 months)">—</span> responses from cancelled teams, last 3 months.</p>
+        <div class="td-chart dash-skeleton" id="c-exit" data-source="exit_survey"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="td-sec" id="activation">
+    <h2>Acquisition, activation and retention</h2>
+    <div class="td-grid">
+      <div class="td-card td-wide">
+        <h3 id="funnel">Signup funnel by platform, last 90 days</h3>
+        <p class="td-note">Activated means created 3+ tasks in the first week. Rates are computed from the counts.</p>
+        <div class="td-tablebox">
+          <table id="t-funnel" data-source="funnel_rates" data-row-key="platform">
+            <thead><tr>
+              <th data-source="funnel_rates" data-field="platform">Platform</th>
+              <th class="n" data-source="funnel_rates" data-field="signups">Signups</th>
+              <th class="n" data-source="funnel_rates" data-field="activated">Activated wk 1</th>
+              <th class="n" data-source="funnel_rates" data-field="activation_rate">Activation</th>
+              <th class="n" data-source="funnel_rates" data-field="trials">Started trial</th>
+              <th class="n" data-source="funnel_rates" data-field="trial_rate">Signup → trial</th>
+              <th class="n" data-source="funnel_rates" data-field="paid">Paid</th>
+              <th class="n" data-source="funnel_rates" data-field="trial_to_paid">Trial → paid</th>
+              <th class="n" data-source="funnel_rates" data-field="signup_to_paid">Signup → paid</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="td-card">
+        <h3 id="activation-rate">Week-1 activation by platform</h3>
+        <p class="td-note">Mobile activates at half the web rate or less.</p>
+        <div class="td-chart dash-skeleton" id="c-act" data-source="funnel_rates"></div>
+      </div>
+      <div class="td-card">
+        <h3 id="retention">Still paying after 6 months</h3>
+        <p class="td-note">Paid teams that started 6–12 months ago, split by teammates invited in the first 14 days.</p>
+        <div class="td-chart dash-skeleton" id="c-ret" data-source="retention"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="td-sec" id="demand">
+    <h2>What people are asking for</h2>
+    <div class="td-grid">
+      <div class="td-card">
+        <h3 id="requests">Feature request votes</h3>
+        <p class="td-note">All-time votes on the public board. Dark bar: estimated votes from paid-plan users.</p>
+        <div class="td-chart dash-skeleton" id="c-req" data-source="requests paid_votes"></div>
+      </div>
+      <div class="td-card">
+        <h3 id="stakeholders">Stakeholder asks</h3>
+        <div class="td-tablebox">
+          <table id="t-stake" data-source="stakeholders" data-row-key="who">
+            <thead><tr>
+              <th data-source="stakeholders" data-field="who">Who</th>
+              <th data-source="stakeholders" data-field="ask">What they said</th>
+              <th data-source="stakeholders" data-field="note">Context</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="td-sec" id="capacity-sec">
+    <h2>Engineering capacity next quarter</h2>
+    <div class="td-grid">
+      <div class="td-card td-wide">
+        <h3 id="capacity">Every ask stacked against capacity</h3>
+        <p class="td-note">Engineer-weeks per initiative, estimates ±<span data-fill="pct0" data-source="context" data-field="value" data-where="measure=Estimate uncertainty (+/-)">—</span>. The dashed line is next quarter's capacity.</p>
+        <div class="td-chart dash-skeleton" id="c-cap" data-source="estimates capacity"></div>
+      </div>
+      <div class="td-card td-wide">
+        <h3 id="estimates">Initiatives and estimates</h3>
+        <div class="td-tablebox">
+          <table id="t-est" data-source="estimates" data-row-key="item">
+            <thead><tr>
+              <th data-source="estimates" data-field="item">Item</th>
+              <th data-source="estimates" data-field="initiative">Initiative</th>
+              <th class="n" data-source="estimates" data-field="weeks">Eng-weeks</th>
+              <th data-source="estimates" data-field="asked_by">Asked for by</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="td-sec" id="checks">
+    <h2>Check before trusting</h2>
+    <div class="td-card">
+      <ul class="td-check">
+        <li>The CEO's <b data-fill="pct0" data-source="context" data-field="value" data-where="measure=CEO survey share wanting AI features">—</b> figure comes from <b data-fill="int" data-source="context" data-field="value" data-where="measure=CEO survey respondents">—</b> respondents on the AI beta waitlist, a self-selected group.</li>
+        <li>The retention split covers <b data-fill="int" data-source="checks" data-field="retention_teams" data-row="0">—</b> teams, the same as all <b data-fill="int" data-source="context" data-field="value" data-where="measure=Paying teams">—</b> paying teams, yet it should only include teams that started paying 6–12 months ago. It also shows correlation: teams that invite early may differ in other ways.</li>
+        <li>The funnel shows <b data-fill="int" data-source="checks" data-field="new_paid_90d" data-row="0">—</b> conversions to paid in 90 days against a base of <b data-fill="int" data-source="context" data-field="value" data-where="measure=Paying teams">—</b> paying teams. That implies much faster growth than ARR suggests; check whether it counts teams or users.</li>
+        <li>The exit survey has <b data-fill="int" data-source="churn_support" data-field="value" data-where="measure=Exit survey responses (last 3 months)">—</b> responses, but last month's churn rate implies only about <b data-fill="int0" data-source="checks" data-field="est_cancelled_3mo" data-row="0">—</b> cancelled teams over 3 months. There may be several responses per team.</li>
+        <li>Sync tickets rose after the July offline-mode launch. The timing points at it, but the data doesn't prove the cause.</li>
+        <li>Votes are all-time and mostly from free users: dark mode has <b data-fill="int" data-source="requests" data-field="votes" data-where="request=Dark mode">—</b> votes but only <b data-fill="pct0" data-source="requests" data-field="paid_share" data-where="request=Dark mode">—</b> of voters pay.</li>
+        <li>At +<span data-fill="pct0" data-source="context" data-field="value" data-where="measure=Estimate uncertainty (+/-)">—</span>, a plan that fills all <b data-fill="int" data-source="capacity" data-field="capacity" data-row="0">—</b> weeks could need up to <b data-fill="int0" data-source="checks" data-field="capacity_overrun" data-row="0">—</b>.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+dash.calc('kpis', {
+  title: 'Churn and revenue estimates',
+  description: 'Average ARR per team, teams and ARR lost per month at last month\'s churn rate, churn change since Q1, and sync-ticket growth.',
+  inputs: ['context', 'churn_support'],
+  fn: (context, churn_support) => {
+    const c = m => Number(context.find(r => r.measure === m).value);
+    const s = m => Number(churn_support.find(r => r.measure === m).value);
+    const perTeam = c('ARR (USD)') / c('Paying teams');
+    const lost = c('Paying teams') * s('Monthly paid churn last month');
+    return [{
+      arr_per_team: perTeam,
+      teams_lost_per_month: lost,
+      arr_lost_per_month: lost * perTeam,
+      churn_change_pts: s('Monthly paid churn last month') - s('Monthly paid churn Q1'),
+      sync_ticket_multiple: s('Sync tickets per month now') / s('Sync tickets per month before offline mode (July)')
+    }];
+  }
+});
+
+dash.calc('funnel_rates', {
+  title: 'Funnel conversion rates',
+  description: 'Each platform plus a total row, with activation, trial and paid conversion rates worked out from the counts.',
+  inputs: ['funnel'],
+  fn: (funnel) => {
+    const rows = funnel.map(r => ({platform: r.platform, signups: +r.signups, activated: +r.activated, trials: +r.trials, paid: +r.paid}));
+    const sum = k => rows.reduce((a, r) => a + r[k], 0);
+    rows.push({platform: 'Total', signups: sum('signups'), activated: sum('activated'), trials: sum('trials'), paid: sum('paid')});
+    return rows.map(r => ({...r,
+      activation_rate: r.activated / r.signups,
+      trial_rate: r.trials / r.signups,
+      trial_to_paid: r.paid / r.trials,
+      signup_to_paid: r.paid / r.signups}));
+  }
+});
+
+dash.calc('paid_votes', {
+  title: 'Votes from paid users',
+  description: 'Votes times the share of voters on a paid plan, rounded.',
+  inputs: ['requests'],
+  fn: (requests) => requests.map(r => ({request: r.request, paid_votes: Math.round(+r.votes * +r.paid_share)}))
+});
+
+dash.calc('capacity', {
+  title: 'Asks vs capacity',
+  description: 'Total engineer-weeks requested against next quarter\'s capacity.',
+  inputs: ['estimates', 'context'],
+  fn: (estimates, context) => {
+    const asked = estimates.reduce((a, r) => a + +r.weeks, 0);
+    const cap = +context.find(r => r.measure === 'Engineering capacity next quarter (engineer-weeks)').value;
+    return [{asked, capacity: cap, over: asked - cap, ratio: asked / cap}];
+  }
+});
+
+dash.calc('checks', {
+  title: 'Data consistency checks',
+  description: 'Teams in the retention split, paid conversions in the funnel, cancellations implied by last month\'s churn over 3 months, and capacity needed if estimates run 25% over.',
+  inputs: ['retention', 'funnel', 'context', 'churn_support'],
+  fn: (retention, funnel, context, churn_support) => {
+    const c = m => +context.find(r => r.measure === m).value;
+    const churn = +churn_support.find(r => r.measure === 'Monthly paid churn last month').value;
+    return [{
+      retention_teams: retention.reduce((a, r) => a + +r.teams, 0),
+      new_paid_90d: funnel.reduce((a, r) => a + +r.paid, 0),
+      est_cancelled_3mo: c('Paying teams') * churn * 3,
+      capacity_overrun: c('Engineering capacity next quarter (engineer-weeks)') * (1 + c('Estimate uncertainty (+/-)'))
+    }];
+  }
+});
+
+const root = document.querySelector('.td');
+const F = {
+  int: d3.format(','),
+  int0: v => d3.format(',')(Math.round(v)),
+  pct0: d3.format('.0%'),
+  pct1: d3.format('.1%'),
+  usd: v => '$' + d3.format(',')(Math.round(v)),
+  usdc: v => '$' + new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(v),
+  x: v => d3.format('.1f')(v) + '×',
+  pts: v => (v >= 0 ? '+' : '') + d3.format('.1f')(v * 100) + ' pts'
+};
+const BAD = s => ['error', 'connect', 'declined', 'missing'].includes(s);
+
+function rowFor(rows, el) {
+  if (el.dataset.where) {
+    const conds = el.dataset.where.split('&').map(p => p.split('=').map(decodeURIComponent));
+    return rows.find(r => conds.every(([k, v]) => String(r[k]) === v));
+  }
+  return rows[+(el.dataset.row || 0)];
+}
+
+function fillText() {
+  root.querySelectorAll('[data-fill]').forEach(el => {
+    const d = dash.data(el.dataset.source);
+    if (d.status !== 'ok') { el.textContent = '—'; return; }
+    const row = rowFor(d.data, el);
+    const v = row ? row[el.dataset.field] : null;
+    el.textContent = v == null || v === '' ? '—' : F[el.dataset.fill](+v);
+  });
+}
+
+// Shows the chart box's state; returns true when every source has data.
+function ready(el, ids) {
+  const st = ids.map(id => dash.data(id).status);
+  if (st.every(s => s === 'ok')) { el.classList.remove('dash-skeleton'); return true; }
+  el.replaceChildren();
+  if (st.some(BAD)) {
+    el.classList.remove('dash-skeleton');
+    const f = document.createElement('div'); f.className = 'td-fail';
+    f.append(document.createElement('i'), 'Failed to load');
+    el.append(f);
+  } else el.classList.add('dash-skeleton');
+  return false;
+}
+
+function div(cls, text) {
+  const e = document.createElement('div'); e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function tooltip(box) {
+  const t = div('td-tip'); box.append(t);
+  return {
+    show(ev, lines) {
+      t.replaceChildren(...lines.map(l => div('', l)));
+      t.classList.add('on');
+      const b = box.getBoundingClientRect();
+      const x = Math.min(ev.clientX - b.left + 12, b.width - t.offsetWidth);
+      t.style.left = Math.max(0, x) + 'px';
+      t.style.top = (ev.clientY - b.top + 14) + 'px';
+    },
+    hide() { t.classList.remove('on'); }
+  };
+}
+
+// Horizontal bars: label and value on top, bar below. items: {label, value, text, color, back, tip}
+function bars(el, items) {
+  el.replaceChildren();
+  const max = d3.max(items, d => Math.max(d.value, d.back || 0)) || 1;
+  const list = div('td-bars');
+  const tip = tooltip(el);
+  items.forEach(d => {
+    const row = div('td-bar-row');
+    const top = div('td-bar-top');
+    top.append(div('td-bar-label', d.label), div('td-bar-val', d.text));
+    const track = div('td-bar-track');
+    if (d.back != null) { const b = div('td-bar-fill td-bar-back'); b.style.width = (d.back / max * 100) + '%'; track.append(b); }
+    const f = div('td-bar-fill'); f.style.width = (d.value / max * 100) + '%'; f.style.background = d.color || dash.colors[0];
+    track.append(f);
+    row.append(top, track);
+    row.addEventListener('mousemove', ev => tip.show(ev, d.tip || [d.label, d.text]));
+    row.addEventListener('mouseleave', () => tip.hide());
+    list.append(row);
+  });
+  el.append(list);
+}
+
+function table(id, dsId, cols) {
+  const tb = document.querySelector(`#${id} tbody`);
+  tb.replaceChildren();
+  const d = dash.data(dsId);
+  if (d.status !== 'ok') return;
+  d.data.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.platform === 'Total') tr.className = 'td-total';
+    cols.forEach(([k, fmt, n]) => {
+      const td = document.createElement('td');
+      if (n) td.className = 'n';
+      td.textContent = fmt ? F[fmt](+r[k]) : (r[k] || '');
+      tr.append(td);
+    });
+    tb.append(tr);
+  });
+}
+
+const accent = () => dash.colors[0];
+const critical = 'var(--cds-chart-status-critical)';
+const muted = 'var(--cds-chart-muted)';
+
+dash.onData(() => {
+  fillText();
+  const val = (rows, m) => +rows.find(r => r.measure === m).value;
+
+  let el = document.getElementById('c-churn');
+  if (ready(el, ['churn_support'])) {
+    const rows = dash.data('churn_support').data;
+    bars(el, [['Q1', 'Monthly paid churn Q1'], ['Q2', 'Monthly paid churn Q2'], ['Last month', 'Monthly paid churn last month']].map(([l, m], i) => {
+      const v = val(rows, m);
+      return {label: l, value: v, text: F.pct1(v), color: i === 2 ? critical : muted, tip: [l, F.pct1(v) + ' of paying teams per month']};
+    }));
+  }
+
+  el = document.getElementById('c-sync');
+  if (ready(el, ['churn_support'])) {
+    const rows = dash.data('churn_support').data;
+    bars(el, [['Before offline mode (July)', 'Sync tickets per month before offline mode (July)'], ['Now', 'Sync tickets per month now']].map(([l, m], i) => {
+      const v = val(rows, m);
+      return {label: l, value: v, text: F.int(v), color: i === 1 ? critical : muted, tip: [l, F.int(v) + ' tickets per month']};
+    }));
+  }
+
+  el = document.getElementById('c-exit');
+  if (ready(el, ['exit_survey'])) {
+    bars(el, dash.data('exit_survey').data.map((r, i) => ({
+      label: r.reason, value: +r.share, text: F.pct0(+r.share), color: i === 0 ? critical : muted,
+      tip: [r.reason, F.pct0(+r.share) + ' of responses']
+    })));
+  }
+
+  table('t-funnel', 'funnel_rates', [['platform'], ['signups', 'int', 1], ['activated', 'int', 1], ['activation_rate', 'pct0', 1], ['trials', 'int', 1], ['trial_rate', 'pct1', 1], ['paid', 'int', 1], ['trial_to_paid', 'pct0', 1], ['signup_to_paid', 'pct1', 1]]);
+
+  el = document.getElementById('c-act');
+  if (ready(el, ['funnel_rates'])) {
+    bars(el, dash.data('funnel_rates').data.filter(r => r.platform !== 'Total').map(r => ({
+      label: r.platform, value: r.activation_rate, text: F.pct0(r.activation_rate),
+      color: r.platform === 'Web' ? accent() : muted,
+      tip: [r.platform, `${F.int(r.activated)} of ${F.int(r.signups)} signups activated`, `${F.pct1(r.signup_to_paid)} signup → paid`]
+    })));
+  }
+
+  el = document.getElementById('c-ret');
+  if (ready(el, ['retention'])) {
+    bars(el, dash.data('retention').data.map((r, i) => ({
+      label: `${r.segment} · ${F.int(+r.teams)} teams`, value: +r.retained_6mo, text: F.pct0(+r.retained_6mo),
+      color: i === 0 ? accent() : muted, tip: [r.segment, `${F.pct0(+r.retained_6mo)} of ${F.int(+r.teams)} teams still paying`]
+    })));
+  }
+
+  el = document.getElementById('c-req');
+  if (ready(el, ['requests', 'paid_votes'])) {
+    const pv = dash.data('paid_votes').data;
+    bars(el, dash.data('requests').data.map(r => {
+      const p = pv.find(x => x.request === r.request).paid_votes;
+      return {label: r.request, back: +r.votes, value: p, color: accent(),
+        text: `${F.int(+r.votes)} votes · ${F.int(p)} paid`,
+        tip: [r.request, `${F.int(+r.votes)} votes total`, `${F.pct0(+r.paid_share)} of voters on a paid plan (≈${F.int(p)})`]};
+    }));
+  }
+
+  table('t-stake', 'stakeholders', [['who'], ['ask'], ['note']]);
+  table('t-est', 'estimates', [['item'], ['initiative'], ['weeks', 'int', 1], ['asked_by']]);
+
+  el = document.getElementById('c-cap');
+  if (ready(el, ['estimates', 'capacity'])) {
+    el.replaceChildren();
+    const est = dash.data('estimates').data;
+    const cap = dash.data('capacity').data[0];
+    const tip = tooltip(el);
+    const strip = div('td-strip');
+    est.forEach((r, i) => {
+      const s = div('td-seg', r.item);
+      s.style.flex = `${+r.weeks} 0 0`;
+      s.style.background = dash.colors[i % dash.colors.length];
+      s.addEventListener('mousemove', ev => tip.show(ev, [`${r.item} · ${r.initiative}`, `${F.int(+r.weeks)} engineer-weeks`]));
+      s.addEventListener('mouseleave', () => tip.hide());
+      strip.append(s);
+    });
+    const pos = cap.capacity / cap.asked;
+    const line = div('td-cap' + (pos > 0.7 ? ' td-cap-r' : ''));
+    line.style.left = (pos * 100) + '%';
+    const lab = document.createElement('span');
+    lab.textContent = `Capacity ${F.int(cap.capacity)} of ${F.int(cap.asked)} asked`;
+    line.append(lab);
+    strip.append(line);
+    el.append(strip);
+  }
+});
+</script>

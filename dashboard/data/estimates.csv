@@ -1,0 +1,9 @@
+item,initiative,weeks,asked_by
+A,Sync reliability fix (rewrite conflict handling for offline edits),12,Head of Support
+B,Mobile onboarding redesign (templates + guided first project),8,
+C,Teammate invite prompts during onboarding,3,
+D,Calendar sync (Google + Outlook),10,
+E,SSO (SAML),6,Head of Sales
+F,AI task assistant v1,16,CEO
+G,Dark mode,4,Head of Marketing
+H,Gantt / timeline view,14,
